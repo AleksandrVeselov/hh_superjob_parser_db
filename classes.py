@@ -54,3 +54,23 @@ class HeadHunterAPI:
         response = requests.get(url, params=params).json()
         return response['items']
 
+
+class DBManager:
+    """Класс для подключения к базе данных Postgress и работе с вакансиями, содержащимися в ней"""
+
+    def get_companies_and_vacancies_count(self):
+        """Получает список всех компаний и количество вакансий у каждой компании"""
+
+    def get_all_vacancies(self):
+        """получает список всех вакансий с указанием названия компании, названия вакансии
+        и зарплаты и ссылки на вакансию"""
+
+    def get_avg_salary(self):
+        """получает среднюю зарплату по вакансиям"""
+
+    def get_vacancies_with_higher_salary(self):
+        """ получает список всех вакансий, у которых зарплата выше средней по всем вакансиям"""
+
+    def get_vacancies_with_keyword(self):
+        """получает список всех вакансий, в названии которых содержатся переданные в метод слова, например “python”"""
+
