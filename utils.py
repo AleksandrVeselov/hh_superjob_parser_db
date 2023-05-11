@@ -1,16 +1,21 @@
-from config import config
 import psycopg2
 
 
-def create_database(db_name, params):
-    """Создание базы данных"""
+def create_database(db_name, params) -> None:
+    """
+    Создание базы данных
+    :param db_name: имя базы данных
+    :param params: параметры для подключения к базе данных
+    :return: None
+    """
+
     conn = psycopg2.connect(**params)
     conn.autocommit = True
     cur = conn.cursor()
     try:
-        cur.execute(f'DROP DATABASE {db_name}')  # Пробуем удалить базу данных
+        cur.execute(f'DROP DATABASE {db_name}')  # Попытка удалить базу данных
     except psycopg2.errors.InvalidCatalogName:
-        pass  # Перехватываем ошибку если базы данных с таким именем не существует
+        pass  # Перехват ошибки если базы данных с таким именем не существует
 
     cur.execute(f'CREATE DATABASE {db_name}')  # Создание базы данных
 
@@ -20,9 +25,9 @@ def create_database(db_name, params):
 
 def create_table(table_name, params) -> None:
     """
-    Создание таблицы с вакансиями из одной компании
-    :param table_name: название компании, которое будет названием таблицы
-    :param: params: параметры для подключения к базе данных
+    Создание таблицы для ее последующего заполнения данными о вакансиях
+    :param table_name: название таблицы
+    :param params: параметры для подключения к базе данных
     :return: None
     """
     conn = None
@@ -37,7 +42,6 @@ def create_table(table_name, params) -> None:
                             f'Currency varchar(50),'
                             f'Employer varchar(50),'
                             f'URL varchar(100))')
-                print("Таблица Skyeng успешно создана")
 
     except(Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -49,9 +53,10 @@ def create_table(table_name, params) -> None:
 def add_data_to_database(table_name, data: list[dict], params) -> None:
     """
     Функция для заполнения таблицы базы данных
+    :param table_name: название таблицы для заполнения
     :param data: список с вакансиями компании
     :param params: параметры для подключения к базе данных
-    :return:
+    :return: None
     """
     conn = None
     try:
@@ -59,7 +64,7 @@ def add_data_to_database(table_name, data: list[dict], params) -> None:
             with conn.cursor() as cur:
                 for vacancy in data:
 
-                    # Если по ключу salary есть словарь
+                    # Если по ключу salary возвращается словарь
                     if vacancy['salary']:
                         salary_min, salary_max = vacancy['salary']['from'], vacancy['salary']['to']  # мин/макс зарплата
                         currency = vacancy['salary']['currency']  # валюта

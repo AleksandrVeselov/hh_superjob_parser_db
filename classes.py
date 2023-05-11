@@ -24,18 +24,22 @@ class HeadHunterAPI:
         response = requests.get(self.URL, params=params).json()
         return response['items']
 
-    def get_vacancies(self, employer_id: int) -> list[dict]:
+    def get_vacancies(self, employer_id: int, count) -> list[dict]:
         """
         :param employer_id: id компании работодателя, для которой нужно получить список вакансий
+        :param count: максимальное количество вакансий(если открытых вакансий больше count, вернется count вакансий)
         :return: список с вакансиями на соответствующей странице
         """
         vacancies = []  # список с вакансиями
         for page in range(20):
-            page = self.get_request(employer_id, page)
-            if not page:
-                # Если в запросе нет вакансий, завершаем цикл
+            if len(vacancies) < count:
+                page = self.get_request(employer_id, page)
+                if not page:
+                    # Если в запросе нет вакансий, завершаем цикл
+                    break
+                vacancies.extend(page)
+            else:
                 break
-            vacancies.extend(page)
 
         return vacancies
 

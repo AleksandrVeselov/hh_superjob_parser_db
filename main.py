@@ -1,35 +1,41 @@
-import psycopg2
-import requests
 import utils
 from classes import HeadHunterAPI
 from config import config
 
+DB_NAME = 'course_project_5'  # Название базы данных для проекта
+TABLE_NAME = 'vacancies'  # Название таблицы для заполнения вакансиями
+VACANCIES_COUNT = 300  # Ограничение максимального количества вакансий для каждой компании
+
 
 def main():
-    """Главный скрипт"""
+    """Главный скрипт проекта"""
 
-    companies = [{'Ключевые системы и компоненты': 3403877},
-                 {'Skyeng': 1122462},
-                 {'СБЕР': 3529},
-                 {'ВТБ': 4181},
-                 {'Иннотех, Группа компаний': 4649269},
-                 {'Ростелеком': 2748},
-                 {'РОСБАНК': 599},
-                 {'ВсеИнструменты.ру': 208707},
-                 {'билайн': 4934},
-                 {'МТС': 3776}]  # Список компаний для парсинга
+    companies = [{'name': 'Ключевые системы и компоненты', 'id': 3403877},
+                 {'name': 'Skyeng', 'id': 1122462},
+                 {'name': 'СБЕР', 'id': 3529},
+                 {'name': 'ВТБ', 'id': 4181},
+                 {'name': 'Иннотех, Группа компаний', 'id': 4649269},
+                 {'name': 'Ростелеком', 'id': 2748},
+                 {'name': 'РОСБАНК', 'id': 599},
+                 {'name': 'МТС', 'id': 3776},
+                 {'name': 'Университет Иннополис', 'id': 1160188},
+                 {'name': 'Softline', 'id': 2381}]  # Список компаний для парсинга
+
     params = config()  # Параметры для подключения к базе данных
-    hh_api = HeadHunterAPI()
-    vac = hh_api.get_vacancies(3403877)  # список словарей с открытыми вакансиями компании по ключу vacancies_url
-    print(*vac, sep='\n')
-    utils.create_database('course_project_5', params)
-    params.update({'dbname': 'course_project_5'})
+    hh_api = HeadHunterAPI()  # Инициализация класса для работы с сайтом Headhunter
+
+    utils.create_database(DB_NAME, params)  # создание базы данных
+    params.update({'dbname': DB_NAME})  # обновление параметров для подключения к базе данных
     print(f"БД успешно создана")
-    utils.create_table('Ключевые системы и компоненты', params)
+    utils.create_table(TABLE_NAME, params)  # Создание таблицы для заполнения в базе данных
     print("Таблица успешно создана")
-    utils.add_data_to_database('Ключевые системы и компоненты', vac, params)
-    # emp = hh_api.get_employers(25)
-    # print(*emp, sep='\n')
+
+    # заполнение таблицы данными о вакансиях компании
+    for company in companies:
+        vac = hh_api.get_vacancies(company['id'], VACANCIES_COUNT)  # получение открытых вакансий соответствующей компании
+        utils.add_data_to_database(TABLE_NAME, vac, params)
+        print(f"Таблица успешно заполнена вакансиями компании {company['name']}")
+
 
 if __name__ == '__main__':
     main()
