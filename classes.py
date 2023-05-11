@@ -40,19 +40,40 @@ class HeadHunterAPI:
         return vacancies
 
     @staticmethod
-    def get_employer_id(employer: str) -> list[dict]:
+    def get_employer_id(employer: str, page) -> list[dict]:
         """
         Получение информации о компании для дальнейшего использования в методах класса
-        :param employer:
-        :return:
+        :param employer: имя работодателя для поиска
+        :param page: номер страницы
+        :return: список с найденными работодателями на данной странице
         """
         url = 'https://api.hh.ru/employers'  # URL для поиска работодателей
         params = {'text': employer,
                   'per_page': 100,
+                  'page': page,
+                  'only_with_vacancies': True
                   }
 
         response = requests.get(url, params=params).json()
         return response['items']
+
+    def get_employers(self, count=10, keyword=None):
+        """
+        Метод для поиска count компаний, имеющих от 100 до 500 активных вакансий
+        :param count: требуемое количество компаний
+        :param keyword
+        :return: список найденных компаний
+        """
+        employers = []
+        page = 0
+        while len(employers) != count:
+            employers_page = self.get_employer_id(keyword, page)
+            for employer in employers_page:
+                if 100 < employer['open_vacancies'] < 500:
+                    employers.append(employer)
+            page += 1
+        return employers
+
 
 
 class DBManager:
@@ -73,4 +94,3 @@ class DBManager:
 
     def get_vacancies_with_keyword(self):
         """получает список всех вакансий, в названии которых содержатся переданные в метод слова, например “python”"""
-
