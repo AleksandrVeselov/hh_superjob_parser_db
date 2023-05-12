@@ -1,3 +1,4 @@
+import psycopg2
 import requests
 
 
@@ -44,57 +45,80 @@ class HeadHunterAPI:
         return vacancies
 
     @staticmethod
-    def get_employer_id(employer: str, page) -> list[dict]:
+    def get_employer_id(employer: str) -> list[dict]:
         """
-        Получение информации о компании для дальнейшего использования в методах класса
-        :param employer: имя работодателя для поиска
-        :param page: номер страницы
-        :return: список с найденными работодателями на данной странице
+        Метод для получения информации о компании
+        :param employer: ключевое слово для поиска компании
+        :return: список с компаниями, найденными по переданному в метод ключевому слову
         """
         url = 'https://api.hh.ru/employers'  # URL для поиска работодателей
         params = {'text': employer,
-                  'per_page': 100,
-                  'page': page,
                   'only_with_vacancies': True
                   }
 
         response = requests.get(url, params=params).json()
         return response['items']
 
-    def get_employers(self, count=10, keyword=None):
-        """
-        Метод для поиска count компаний, имеющих от 100 до 500 активных вакансий
-        :param count: требуемое количество компаний
-        :param keyword
-        :return: список найденных компаний
-        """
-        employers = []
-        page = 0
-        while len(employers) != count:
-            employers_page = self.get_employer_id(keyword, page)
-            for employer in employers_page:
-                if 100 < employer['open_vacancies'] < 500:
-                    employers.append(employer)
-            page += 1
-        return employers
-
-
 
 class DBManager:
     """Класс для подключения к базе данных Postgress и работе с вакансиями, содержащимися в ней"""
+    def __init__(self, params):
+        self.params = params
 
     def get_companies_and_vacancies_count(self):
         """Получает список всех компаний и количество вакансий у каждой компании"""
 
-    def get_all_vacancies(self):
+    def get_all_vacancies(self, table_name):
         """получает список всех вакансий с указанием названия компании, названия вакансии
         и зарплаты и ссылки на вакансию"""
+        conn = None
+        try:
+            with psycopg2.connect(**self.params) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f'SELECT * FROM {table_name}')
+                    result = cur.fetchall()
 
-    def get_avg_salary(self):
+        except(Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+        return result
+
+    def get_avg_salary(self, table_name):
         """получает среднюю зарплату по вакансиям"""
+        conn = None
+        try:
+            with psycopg2.connect(**self.params) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f'SELECT AVG(min_salary) as average_min, '
+                                f'AVG(max_salary) as average_max  FROM {table_name}')
+                    result = cur.fetchall()
 
-    def get_vacancies_with_higher_salary(self):
+        except(Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+        return result
+
+    def get_vacancies_with_higher_salary(self, table_name):
         """ получает список всех вакансий, у которых зарплата выше средней по всем вакансиям"""
+        conn = None
+        try:
+            with psycopg2.connect(**self.params) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f'SELECT * FROM {table_name} '
+                                f'WHERE min_salary > (SELECT AVG(min_salary) FROM {table_name})')
+                    result = cur.fetchall()
+
+        except(Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+        return result
 
     def get_vacancies_with_keyword(self):
         """получает список всех вакансий, в названии которых содержатся переданные в метод слова, например “python”"""
+        # SELECT * FROM vacancies WHERE name LIKE '%конструктор%'

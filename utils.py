@@ -85,8 +85,8 @@ def add_data_to_database(table_name, data: list[dict], params) -> None:
                                                                          salary_min,
                                                                          salary_max,
                                                                          currency,
-                                                                         vacancy['alternate_url'],
-                                                                         vacancy['employer']['name']))
+                                                                         vacancy['employer']['name'],
+                                                                         vacancy['alternate_url']))
 
     except(Exception, psycopg2.DatabaseError) as error:
         print(error)
