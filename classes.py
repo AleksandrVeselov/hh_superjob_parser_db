@@ -65,8 +65,21 @@ class DBManager:
     def __init__(self, params):
         self.params = params
 
-    def get_companies_and_vacancies_count(self):
+    def get_companies_and_vacancies_count(self, table_name):
         """Получает список всех компаний и количество вакансий у каждой компании"""
+        conn = None
+        try:
+            with psycopg2.connect(**self.params) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f'SELECT url, count(*) FROM {table_name} GROUP BY url')
+                    result = cur.fetchall()
+
+        except(Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+        return result
 
     def get_all_vacancies(self, table_name):
         """получает список всех вакансий с указанием названия компании, названия вакансии

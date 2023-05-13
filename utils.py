@@ -1,4 +1,5 @@
 import psycopg2
+from classes import HeadHunterAPI
 
 
 def create_database(db_name, params) -> None:
@@ -93,3 +94,30 @@ def add_data_to_database(table_name, data: list[dict], params) -> None:
     finally:
         if conn is not None:
             conn.close()
+
+
+def append_company(founded_companies: list[dict], companies: list[dict], id_for_adding: str) -> None:
+    """
+    Добавление новой компании в список
+    :param founded_companies: список найденных компаний
+    :param companies: исходный список
+    :param id_for_adding: id компании, которую нужно добавить
+    :return: None
+    """
+    for company in founded_companies:
+        if company['id'] == id_for_adding:
+            companies.append(company)
+
+
+def delete_company(companies: list[dict], id_for_deleting: str):
+    """
+    Удаление вакансии по переданному ID
+    :param companies: исходный список
+    :param id_for_deleting: id компании, которую нужно удалить
+    :return: None
+    """
+    for company in companies:
+        if company['id'] == int(id_for_deleting):
+            companies.remove(company)
+
+
