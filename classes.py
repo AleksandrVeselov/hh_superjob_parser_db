@@ -62,6 +62,12 @@ class HeadHunterAPI:
 
 class DBManager:
     """Класс для подключения к базе данных Postgress и работе с вакансиями, содержащимися в ней"""
+    def __init__(self, params):
+        """
+        Инициазизатор класса
+        :param params: параметры для подключение к базе данных
+        """
+        self.params = params
 
     @staticmethod
     def get_companies_and_vacancies_count(table_name, cur):
@@ -103,3 +109,38 @@ class DBManager:
                     f"WHERE name LIKE '%{keyword}%'")
         result = cur.fetchall()
         return result
+
+    def manager(self, key: str, table_name, keyword=None) -> list[tuple]:
+        """
+        Метод-менеджер для вызова других методов класса
+        :param key: ключ
+        :param table_name: название таблицы для обращения
+        :param keyword: ключевое слово для фильтрации
+        :return: результат работы соответствующего SQL запроса
+        """
+        conn = None
+        try:
+            with psycopg2.connect(**self.params) as conn:
+                with conn.cursor() as cur:
+
+                    if key == '1':
+                        rows = self.get_companies_and_vacancies_count(table_name, cur)
+
+                    elif key == '2':
+                        rows = self.get_all_vacancies(table_name, cur)
+
+                    elif key == '3':
+                        rows = self.get_avg_salary(table_name, cur)
+
+                    elif key == '4':
+                        rows = self.get_vacancies_with_higher_salary(table_name, cur)
+
+                    elif key == '5':
+                        rows = self.get_vacancies_with_keyword(table_name, keyword, cur)
+
+        except(Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                conn.close()
+            return rows

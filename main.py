@@ -1,5 +1,3 @@
-import psycopg2
-
 import utils
 import classes
 from config import config
@@ -10,7 +8,7 @@ VACANCIES_COUNT = 300  # Ограничение максимального ко�
 
 
 def main():
-    """Главный скрипт проекта"""
+    """Функция для взаимодействия с пользователем"""
 
     companies = [{'name': 'Ключевые системы и компоненты', 'id': 3403877},
                  {'name': 'Тензор', 'id': 67611},
@@ -32,10 +30,10 @@ def main():
     print(*companies, sep='\n')
 
     while True:
-        user_input = input('Хотите ли его изменить? - y/n -> ')
+        user_response = input('Хотите его изменить? - y/n -> ')
 
         # Изменение списка компаний
-        if user_input.lower() == 'y':
+        if user_response.lower() == 'y':
             while True:
 
                 flag = input('''Что сделать со списком:
@@ -82,7 +80,7 @@ def main():
             break
 
         # Выход из цикла и продолжение работы программы
-        elif user_input.lower() == 'n':
+        elif user_response.lower() == 'n':
             break
 
         else:
@@ -103,7 +101,7 @@ def main():
         utils.add_data_to_database(TABLE_NAME, vac, params)
         print(f"Таблица {TABLE_NAME} успешно заполнена вакансиями компании {company['name']}")
 
-    db_manager = classes.DBManager()  # Создание экземпляра класса DBManager для работы с БД
+    db_manager = classes.DBManager(params)  # Создание экземпляра класса DBManager для работы с БД
 
     while True:
         user_response = input("""Возможности работы с базой данных:
@@ -115,40 +113,25 @@ def main():
         6 - Выход из программы.
         --> """)
 
-        if user_response not in '123456':
+        if user_response not in ('1', '2', '3', '4', '5', '6'):
             print('Введите корректный ответ')
 
+        # Выход
         elif user_response == '6':
             break
 
+        # Поиск по ключевому слову
+        elif user_response == '5':
+            keyword = input('Введите ключевое слово для поиска в названии вакансии -> ')
+            rows = db_manager.manager(user_response, TABLE_NAME, keyword)  # результат работы SQL запроса
+            if rows:
+                print(*rows, sep='\n')
+            else:
+                print('По введенному ключевому слову вакансий не найдено(')
+
+        # Всё остальное
         else:
-            conn = None
-            try:
-                with psycopg2.connect(**params) as conn:
-                    with conn.cursor() as cur:
-
-                        if user_response == '1':
-                            rows = db_manager.get_companies_and_vacancies_count(TABLE_NAME, cur)
-
-                        elif user_response == '2':
-                            rows = db_manager.get_all_vacancies(TABLE_NAME, cur)
-
-                        elif user_response == '3':
-                            rows = db_manager.get_avg_salary(TABLE_NAME, cur)
-
-                        elif user_response == '4':
-                            rows = db_manager.get_vacancies_with_higher_salary(TABLE_NAME, cur)
-
-                        elif user_response == '5':
-                            keyword = input('Введите ключевое слово для поиска в названии вакансии -> ')
-                            rows = db_manager.get_vacancies_with_keyword(TABLE_NAME, keyword, cur)
-
-            except(Exception, psycopg2.DatabaseError) as error:
-                print(error)
-            finally:
-                if conn is not None:
-                    conn.close()
-
+            rows = db_manager.manager(user_response, TABLE_NAME)  # результат работы SQL запроса
             print(*rows, sep='\n')
 
 
