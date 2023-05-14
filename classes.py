@@ -62,76 +62,44 @@ class HeadHunterAPI:
 
 class DBManager:
     """Класс для подключения к базе данных Postgress и работе с вакансиями, содержащимися в ней"""
-    def __init__(self, params):
-        self.params = params
 
-    def get_companies_and_vacancies_count(self, table_name):
+    @staticmethod
+    def get_companies_and_vacancies_count(table_name, cur):
         """Получает список всех компаний и количество вакансий у каждой компании"""
-        conn = None
-        try:
-            with psycopg2.connect(**self.params) as conn:
-                with conn.cursor() as cur:
-                    cur.execute(f'SELECT url, count(*) FROM {table_name} GROUP BY url')
-                    result = cur.fetchall()
+        cur.execute(f'SELECT employer, count(*) FROM {table_name} GROUP BY employer')
+        result = cur.fetchall()
 
-        except(Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            if conn is not None:
-                conn.close()
         return result
 
-    def get_all_vacancies(self, table_name):
+    @staticmethod
+    def get_all_vacancies(table_name, cur):
         """получает список всех вакансий с указанием названия компании, названия вакансии
         и зарплаты и ссылки на вакансию"""
-        conn = None
-        try:
-            with psycopg2.connect(**self.params) as conn:
-                with conn.cursor() as cur:
-                    cur.execute(f'SELECT * FROM {table_name}')
-                    result = cur.fetchall()
+        cur.execute(f'SELECT * FROM {table_name}')
+        result = cur.fetchall()
 
-        except(Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            if conn is not None:
-                conn.close()
         return result
 
-    def get_avg_salary(self, table_name):
+    @staticmethod
+    def get_avg_salary(table_name, cur):
         """получает среднюю зарплату по вакансиям"""
-        conn = None
-        try:
-            with psycopg2.connect(**self.params) as conn:
-                with conn.cursor() as cur:
-                    cur.execute(f'SELECT AVG(min_salary) as average_min, '
-                                f'AVG(max_salary) as average_max  FROM {table_name}')
-                    result = cur.fetchall()
-
-        except(Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            if conn is not None:
-                conn.close()
+        cur.execute(f'SELECT AVG(min_salary) as average_min, '
+                    f'AVG(max_salary) as average_max  FROM {table_name}')
+        result = cur.fetchall()
         return result
 
-    def get_vacancies_with_higher_salary(self, table_name):
+    @staticmethod
+    def get_vacancies_with_higher_salary(table_name, cur):
         """ получает список всех вакансий, у которых зарплата выше средней по всем вакансиям"""
-        conn = None
-        try:
-            with psycopg2.connect(**self.params) as conn:
-                with conn.cursor() as cur:
-                    cur.execute(f'SELECT * FROM {table_name} '
-                                f'WHERE min_salary > (SELECT AVG(min_salary) FROM {table_name})')
-                    result = cur.fetchall()
-
-        except(Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            if conn is not None:
-                conn.close()
+        cur.execute(f'SELECT * FROM {table_name} '
+                    f'WHERE min_salary > (SELECT AVG(min_salary) FROM {table_name})')
+        result = cur.fetchall()
         return result
 
-    def get_vacancies_with_keyword(self):
+    @staticmethod
+    def get_vacancies_with_keyword(table_name, keyword, cur):
         """получает список всех вакансий, в названии которых содержатся переданные в метод слова, например “python”"""
-        # SELECT * FROM vacancies WHERE name LIKE '%конструктор%'
+        cur.execute(f"SELECT * FROM {table_name} "
+                    f"WHERE name LIKE '%{keyword}%'")
+        result = cur.fetchall()
+        return result

@@ -1,10 +1,12 @@
+import psycopg2
+
 import utils
 import classes
 from config import config
 
 DB_NAME = 'course_project_5'  # Название базы данных для проекта
 TABLE_NAME = 'vacancies'  # Название таблицы для заполнения вакансиями
-VACANCIES_COUNT = 300  # Ограничение максимального количества вакансий для каждой компании
+VACANCIES_COUNT = 300  # Ограничение максимального количества вакансий, чтобы не мучить Headhunter запросами
 
 
 def main():
@@ -21,7 +23,7 @@ def main():
                  {'name': 'Университет Иннополис', 'id': 1160188},
                  {'name': 'Softline', 'id': 2381}]  # Список компаний для парсинга
 
-    hh_api = classes.HeadHunterAPI()  # Инициализация класса для работы с сайтом Headhunter
+    hh_api = classes.HeadHunterAPI()  # Инициализация класса для работы с API сайта Headhunter
 
     # Приветствие пользователя, вывод списка компаний, заданных по умолчанию и предложение его изменить
     print('Привет, друг! Это курсовой проект по теме "Работа с базами данных.')
@@ -30,7 +32,7 @@ def main():
     print(*companies, sep='\n')
 
     while True:
-        user_input = input('Хотите ли его изменить - y/n -> ')
+        user_input = input('Хотите ли его изменить? - y/n -> ')
 
         # Изменение списка компаний
         if user_input.lower() == 'y':
@@ -86,25 +88,68 @@ def main():
         else:
             print('Введите корректный ответ')
 
-    # params = config()  # Параметры для подключения к базе данных
-    # utils.create_database(DB_NAME, params)  # создание базы данных
-    # params.update({'dbname': DB_NAME})  # обновление параметров для подключения к базе данных
-    # print(f"БД {DB_NAME} успешно создана")
-    #
-    # utils.create_table(TABLE_NAME, params)  # Создание в базе данных таблицы для заполнения
-    # print(f"Таблица {TABLE_NAME} успешно создана")
-    #
-    # # заполнение таблицы данными о вакансиях компании
-    # for company in companies:
-    #     vac = hh_api.get_vacancies(company['id'],
-    #                                VACANCIES_COUNT)  # получение открытых вакансий соответствующей компании
-    #     utils.add_data_to_database(TABLE_NAME, vac, params)
-    #     print(f"Таблица {TABLE_NAME} успешно заполнена вакансиями компании {company['name']}")
-    #
-    #
-    # db_manager = classes.DBManager(params)
-    # rows = db_manager.get_companies_and_vacancies_count(TABLE_NAME)
-    # print(*rows, sep='\n')
+    params = config()  # Параметры для подключения к базе данных
+    utils.create_database(DB_NAME, params)  # создание базы данных
+    params.update({'dbname': DB_NAME})  # обновление параметров для подключения к базе данных
+    print(f"БД {DB_NAME} успешно создана")
+
+    utils.create_table(TABLE_NAME, params)  # Создание в базе данных таблицы для заполнения
+    print(f"Таблица {TABLE_NAME} успешно создана")
+
+    # заполнение таблицы данными о вакансиях компании
+    for company in companies:
+        vac = hh_api.get_vacancies(company['id'],
+                                   VACANCIES_COUNT)  # получение открытых вакансий соответствующей компании
+        utils.add_data_to_database(TABLE_NAME, vac, params)
+        print(f"Таблица {TABLE_NAME} успешно заполнена вакансиями компании {company['name']}")
+
+    db_manager = classes.DBManager()  # Создание экземпляра класса DBManager для работы с БД
+
+    while True:
+        user_response = input("""Возможности работы с базой данных:
+        1 - Вывести список всех компаний и количество вакансий у каждой компании.
+        2 - Вывести список всех вакансий с указанием названия компании, названия вакансии, зарплаты и ссылки на вакансию
+        3 - Вывести среднюю зарплату по всем вакансиям.
+        4 - Вывести список всех вакансий, у которых зарплата выше средней по всем вакансиям.
+        5 - Вывести список всех вакансий, в названии которых содержатся переданные в метод слова, например “python”
+        6 - Выход из программы.
+        --> """)
+
+        if user_response not in '123456':
+            print('Введите корректный ответ')
+
+        elif user_response == '6':
+            break
+
+        else:
+            conn = None
+            try:
+                with psycopg2.connect(**params) as conn:
+                    with conn.cursor() as cur:
+
+                        if user_response == '1':
+                            rows = db_manager.get_companies_and_vacancies_count(TABLE_NAME, cur)
+
+                        elif user_response == '2':
+                            rows = db_manager.get_all_vacancies(TABLE_NAME, cur)
+
+                        elif user_response == '3':
+                            rows = db_manager.get_avg_salary(TABLE_NAME, cur)
+
+                        elif user_response == '4':
+                            rows = db_manager.get_vacancies_with_higher_salary(TABLE_NAME, cur)
+
+                        elif user_response == '5':
+                            keyword = input('Введите ключевое слово для поиска в названии вакансии -> ')
+                            rows = db_manager.get_vacancies_with_keyword(TABLE_NAME, keyword, cur)
+
+            except(Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                if conn is not None:
+                    conn.close()
+
+            print(*rows, sep='\n')
 
 
 if __name__ == '__main__':

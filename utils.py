@@ -1,5 +1,4 @@
 import psycopg2
-from classes import HeadHunterAPI
 
 
 def create_database(db_name, params) -> None:
