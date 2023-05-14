@@ -105,7 +105,7 @@ def append_company(founded_companies: list[dict], companies: list[dict], id_for_
     """
     for company in founded_companies:
         if company['id'] == id_for_adding:
-            companies.append(company)
+            companies.append({'name': company['name'], 'id': company['id']})
 
 
 def delete_company(companies: list[dict], id_for_deleting: str):
